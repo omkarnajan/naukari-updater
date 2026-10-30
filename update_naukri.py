@@ -36,11 +36,12 @@ def update_naukri_profile():
                     clean_cookie["expires"] = cookie["expirationDate"]
                 
                 # Map SameSite values correctly
-                if "sameSite" in cookie and cookie["sameSite"] != "no_restriction":
-                    # Playwright expects 'Strict', 'Lax', or 'None'
-                    clean_cookie["sameSite"] = cookie["sameSite"].capitalize()
-                elif cookie.get("sameSite") == "no_restriction":
-                    clean_cookie["sameSite"] = "None"
+                if cookie.get("sameSite"):
+                    if cookie["sameSite"] == "no_restriction":
+                        clean_cookie["sameSite"] = "None"
+                    else:
+                        clean_cookie["sameSite"] = cookie["sameSite"].capitalize()
+                
                     
                 clean_cookies.append(clean_cookie)
 
