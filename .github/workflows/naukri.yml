@@ -28,6 +28,5 @@ jobs:
 
       - name: Run Playwright Script
         env:
-          NAUKRI_USERNAME: ${{ secrets.NAUKRI_USERNAME }}
-          NAUKRI_PASSWORD: ${{ secrets.NAUKRI_PASSWORD }}
+          NAUKRI_COOKIES: ${{ secrets.NAUKRI_COOKIES }}
         run: python update_naukri.py
