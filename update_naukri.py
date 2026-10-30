@@ -5,7 +5,7 @@ from playwright.sync_api import sync_playwright, TimeoutError
 
 def update_naukri_profile():
     cookies_str = os.environ.get('NAUKRI_COOKIES')
-    resume_path = "resume.pdf"
+    resume_path = "Omkar_Najan_Resume.pdf"
 
     if not cookies_str:
         print("❌ NAUKRI_COOKIES secret is missing or empty!")
