@@ -1,5 +1,6 @@
 import os
 import json
+import sys
 from playwright.sync_api import sync_playwright, TimeoutError
 
 def update_naukri_profile():
@@ -8,7 +9,7 @@ def update_naukri_profile():
 
     if not cookies_str:
         print("❌ NAUKRI_COOKIES secret is missing or empty!")
-        return
+        sys.exit(1)  # Forces GitHub Actions to report a failure
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -22,7 +23,7 @@ def update_naukri_profile():
             print("✅ Session cookies injected successfully.")
         except Exception as e:
             print(f"❌ Failed to parse cookies JSON: {str(e)}")
-            return
+            sys.exit(1)  # Forces GitHub Actions to report a failure
 
         page = context.new_page()
 
@@ -30,11 +31,10 @@ def update_naukri_profile():
         page.goto("https://www.naukri.com/mnjuser/profile")
         page.wait_for_load_state("networkidle")
 
-        # Verify the bypass worked
         if "login" in page.url.lower():
             print("❌ Cookie bypass failed. Naukri redirected to the login page. Your cookies may have expired.")
             browser.close()
-            return
+            sys.exit(1)  # Forces GitHub Actions to report a failure
             
         print("✅ Successfully accessed profile page.")
 
