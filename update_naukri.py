@@ -76,11 +76,17 @@ def update_naukri_profile():
         # Action 2: Toggle a space in the Resume Headline
         try:
             print("Attempting Resume Headline update...")
-            page.click("span[aria-label='Edit resume headline']")
             
+            # 1. SCROLL to the section so Naukri loads the HTML
+            page.locator("text=Resume headline").first.scroll_into_view_if_needed()
+            page.wait_for_timeout(1000)
+            
+            # 2. Click the edit button
+            page.click("span[aria-label='Edit resume headline']")
             page.wait_for_selector("textarea[id='resumeHeadlineTxt']", timeout=5000)
+            
             current_text = page.input_value("textarea[id='resumeHeadlineTxt']")
-        
+            
             # Remove the phrase if it already exists so we don't duplicate it on future runs
             base_text = current_text.replace(" - updated via github", "").strip()
             
@@ -94,10 +100,12 @@ def update_naukri_profile():
             page.click("button.btn-dark-ot[type='submit']")
             page.wait_for_selector("text=Resume Headline has been successfully saved", timeout=10000)
             print("✅ Resume Headline updated successfully.")
+            
         except Exception as e:
-            print(f"⚠️ Text toggle failed: {str(e)}")
-
-        browser.close()
+            # Tell GitHub to fail the action if this breaks!
+            print(f"❌ Text toggle failed: {str(e)}")
+            browser.close()
+            sys.exit(1)
 
 if __name__ == "__main__":
     update_naukri_profile()
