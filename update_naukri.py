@@ -9,7 +9,7 @@ def update_naukri_profile():
 
     if not cookies_str:
         print("❌ NAUKRI_COOKIES secret is missing or empty!")
-        sys.exit(1)  # Forces GitHub Actions to report a failure
+        sys.exit(1)
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -18,12 +18,37 @@ def update_naukri_profile():
         )
 
         try:
-            cookies = json.loads(cookies_str)
-            context.add_cookies(cookies)
+            raw_cookies = json.loads(cookies_str)
+            clean_cookies = []
+            
+            # Automatically clean and format the cookies for Playwright
+            for cookie in raw_cookies:
+                clean_cookie = {
+                    "name": cookie["name"],
+                    "value": cookie["value"],
+                    "domain": cookie["domain"],
+                    "path": cookie["path"],
+                    "secure": cookie.get("secure", False),
+                    "httpOnly": cookie.get("httpOnly", False)
+                }
+                # Translate expirationDate to expires
+                if "expirationDate" in cookie:
+                    clean_cookie["expires"] = cookie["expirationDate"]
+                
+                # Map SameSite values correctly
+                if "sameSite" in cookie and cookie["sameSite"] != "no_restriction":
+                    # Playwright expects 'Strict', 'Lax', or 'None'
+                    clean_cookie["sameSite"] = cookie["sameSite"].capitalize()
+                elif cookie.get("sameSite") == "no_restriction":
+                    clean_cookie["sameSite"] = "None"
+                    
+                clean_cookies.append(clean_cookie)
+
+            context.add_cookies(clean_cookies)
             print("✅ Session cookies injected successfully.")
         except Exception as e:
-            print(f"❌ Failed to parse cookies JSON: {str(e)}")
-            sys.exit(1)  # Forces GitHub Actions to report a failure
+            print(f"❌ Failed to parse or inject cookies JSON: {str(e)}")
+            sys.exit(1)
 
         page = context.new_page()
 
@@ -34,7 +59,7 @@ def update_naukri_profile():
         if "login" in page.url.lower():
             print("❌ Cookie bypass failed. Naukri redirected to the login page. Your cookies may have expired.")
             browser.close()
-            sys.exit(1)  # Forces GitHub Actions to report a failure
+            sys.exit(1)
             
         print("✅ Successfully accessed profile page.")
 
