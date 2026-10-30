@@ -68,7 +68,7 @@ def update_naukri_profile():
         try:
             print("Attempting PDF upload...")
             page.set_input_files("input[type='file'][id='attachCV']", resume_path)
-            page.wait_for_selector("text=successfully uploaded", timeout=10000)
+            page.wait_for_selector(f"div[title='{resume_path}']", timeout=15000)
             print("✅ PDF uploaded successfully.")
         except TimeoutError:
             print("⚠️ PDF upload success message not found. Moving to text toggle.")
@@ -80,8 +80,15 @@ def update_naukri_profile():
             
             page.wait_for_selector("textarea[id='resumeHeadlineTxt']", timeout=5000)
             current_text = page.input_value("textarea[id='resumeHeadlineTxt']")
+        
+            # Remove the phrase if it already exists so we don't duplicate it on future runs
+            base_text = current_text.replace(" - updated via github", "").strip()
             
-            new_text = current_text[:-1] if current_text.endswith(' ') else current_text + ' '
+            # Append the phrase and toggle a space so Naukri registers a modification
+            if current_text.endswith(" "):
+                new_text = base_text + " - updated via github"
+            else:
+                new_text = base_text + " - updated via github "
                 
             page.fill("textarea[id='resumeHeadlineTxt']", new_text)
             page.click("button.btn-dark-ot[type='submit']")
