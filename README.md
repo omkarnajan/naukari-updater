@@ -1,0 +1,1 @@
+# naukari-updater
