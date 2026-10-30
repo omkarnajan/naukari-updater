@@ -76,7 +76,7 @@ def update_naukri_profile():
         # Action 2: Toggle a space in the Resume Headline
         try:
             print("Attempting Resume Headline update...")
-            page.click("xpath=//span[contains(text(), 'Resume headline')]/following-sibling::span[contains(@class, 'edit')]")
+            page.click("span[aria-label='Edit resume headline']")
             
             page.wait_for_selector("textarea[id='resumeHeadlineTxt']", timeout=5000)
             current_text = page.input_value("textarea[id='resumeHeadlineTxt']")
@@ -84,7 +84,7 @@ def update_naukri_profile():
             new_text = current_text[:-1] if current_text.endswith(' ') else current_text + ' '
                 
             page.fill("textarea[id='resumeHeadlineTxt']", new_text)
-            page.click("form[name='resumeHeadlineForm'] button[type='submit']")
+            page.click("button.btn-dark-ot[type='submit']")
             page.wait_for_selector("text=Resume Headline has been successfully saved", timeout=10000)
             print("✅ Resume Headline updated successfully.")
         except Exception as e:
