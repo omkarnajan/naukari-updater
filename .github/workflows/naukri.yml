@@ -1,32 +1,37 @@
 name: Naukri Profile Refresher
-
 on:
   schedule:
     - cron: '30 3 * * *' # 9:00 AM IST
     - cron: '0 4 * * *'  # 9:30 AM IST
     - cron: '0 5 * * *'  # 10:30 AM IST
   workflow_dispatch:
-
 jobs:
   update-profile:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
+        
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
-
+          
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           playwright install chromium --with-deps
-
+          
       - name: Run Playwright Script
         env:
           NAUKRI_COOKIES: ${{ secrets.NAUKRI_COOKIES }}
         run: python update_naukri.py
+
+      - name: Upload Debug Screenshot
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-screenshots
+          path: ./*.png
