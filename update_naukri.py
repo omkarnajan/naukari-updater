@@ -2,7 +2,7 @@ import os
 import json
 import sys
 from playwright.sync_api import sync_playwright, TimeoutError
-from playwright_stealth import stealth_sync
+from playwright_stealth import Stealth
 
 def update_naukri_profile():
     cookies_str = os.environ.get('NAUKRI_COOKIES')
@@ -11,7 +11,8 @@ def update_naukri_profile():
         print("❌ NAUKRI_COOKIES secret is missing or empty!")
         sys.exit(1)
 
-    with sync_playwright() as p:
+    # NEW PATTERN FOR PLAYWRIGHT STEALTH v2.x
+    with Stealth().use_sync(sync_playwright()) as p:
         # Launch with arguments to help bypass basic bot detection
         browser = p.chromium.launch(
             headless=True,
@@ -51,9 +52,6 @@ def update_naukri_profile():
             sys.exit(1)
 
         page = context.new_page()
-        
-        # APPLY STEALTH MODE to bypass basic Akamai checks
-        stealth_sync(page)
 
         print("Navigating directly to profile page...")
         page.goto("https://www.naukri.com/mnjuser/profile")
