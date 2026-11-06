@@ -42,7 +42,6 @@ def update_naukri_profile():
                     else:
                         clean_cookie["sameSite"] = cookie["sameSite"].capitalize()
                 
-                    
                 clean_cookies.append(clean_cookie)
 
             context.add_cookies(clean_cookies)
@@ -64,41 +63,63 @@ def update_naukri_profile():
             
         print("✅ Successfully accessed profile page.")
 
-        # Action 1: Upload the Resume PDF
-        try:
-            print("Attempting PDF upload...")
-            page.set_input_files("input[type='file'][id='attachCV']", resume_path)
-            page.wait_for_selector(f"div[title='{resume_path}']", timeout=15000)
-            print("✅ PDF uploaded successfully.")
-        except TimeoutError:
-            print("⚠️ PDF upload success message not found. Moving to text toggle.")
+        # ==========================================
+        # ACTION 1: Upload the Resume PDF (COMMENTED OUT)
+        # ==========================================
+        # try:
+        #     print("Attempting PDF upload...")
+        #     page.set_input_files("input[type='file'][id='attachCV']", resume_path)
+        #     page.wait_for_selector(f"div[title='{resume_path}']", timeout=15000)
+        #     print("✅ PDF uploaded successfully.")
+        # except TimeoutError:
+        #     print("⚠️ PDF upload success message not found. Moving to text toggle.")
 
-        # Action 2: Toggle a space in the Resume Headline
+        # ==========================================
+        # ACTION 2: Update the Resume Headline
+        # ==========================================
         try:
             print("Attempting Resume Headline update...")
             
-            # 1. SCROLL to the section so Naukri loads the HTML
-            page.locator("text=Resume headline").first.scroll_into_view_if_needed()
-            page.wait_for_timeout(1000)
+            # 1. SCROLL and WAIT for the main lazy-loaded container
+            page.wait_for_selector("#lazyResumeHead", timeout=15000)
+            resume_container = page.locator("#lazyResumeHead")
+            resume_container.scroll_into_view_if_needed()
+            page.wait_for_timeout(2000) # Give React time to hydrate the UI
             
-            # 2. Click the edit button
-            page.click("span[aria-label='Edit resume headline']")
-            page.wait_for_selector("textarea[id='resumeHeadlineTxt']", timeout=5000)
+            # 2. Click the Edit Button using robust selectors
+            # Matches behavior in JS: "span.edit.icon, .edit.icon, span.edit, .edit"
+            edit_btn = resume_container.locator(".edit.icon, span.edit, .widgetHead .edit").first
+            edit_btn.click()
             
-            current_text = page.input_value("textarea[id='resumeHeadlineTxt']")
+            # Wait for textarea to appear
+            page.wait_for_selector("textarea", timeout=10000)
             
-            # Remove the phrase if it already exists so we don't duplicate it on future runs
-            base_text = current_text.replace(" - updated via github", "").strip()
+            # Locate the textarea inside the active lightbox/editor
+            text_area = page.locator(".resumeHeadlineEdit textarea, #lazyResumeHead textarea, textarea").first
+            current_text = text_area.input_value().strip()
+            print(f"Current headline: '{current_text}'")
             
-            # Append the phrase and toggle a space so Naukri registers a modification
-            if current_text.endswith(" "):
-                new_text = base_text + " - updated via github"
+            # 3. Modify text (toggle trailing dot to register a difference)
+            if not current_text:
+                new_text = "Software Engineer | Amazon Pay | Java, AWS, Distributed Systems"
+            elif current_text.endswith("."):
+                new_text = current_text[:-1]  # Remove dot
             else:
-                new_text = base_text + " - updated via github "
+                new_text = current_text + "." # Add dot
                 
-            page.fill("textarea[id='resumeHeadlineTxt']", new_text)
-            page.click("button.btn-dark-ot[type='submit']")
-            page.wait_for_selector("text=Resume Headline has been successfully saved", timeout=10000)
+            print(f"New headline target: '{new_text}'")
+            
+            # Fill the new text (Playwright handles React's onChange events nicely via fill)
+            text_area.fill(new_text)
+            page.wait_for_timeout(500)
+            
+            # 4. Click Save
+            # Look for generic save buttons in the container (like the JS does)
+            save_btn = page.locator("button:has-text('Save'), button:has-text('Submit'), form button[type='submit']").first
+            save_btn.click()
+            
+            # Wait for save modal to disappear / process
+            page.wait_for_timeout(3500)
             print("✅ Resume Headline updated successfully.")
             
         except Exception as e:
@@ -106,6 +127,8 @@ def update_naukri_profile():
             print(f"❌ Text toggle failed: {str(e)}")
             browser.close()
             sys.exit(1)
+            
+        browser.close()
 
 if __name__ == "__main__":
     update_naukri_profile()
